@@ -1,9 +1,0 @@
-{
-  "extends": ["mourner", "prettier"],
-  "rules": {
-    "indent": ["warn", 2],
-    "no-undef": "error",
-    "no-shadow": "error",
-    "quotes": [2, "double"]
-  }
-}
