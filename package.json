@@ -18,7 +18,8 @@
   "license": "ISC",
   "dependencies": {
     "debug": "^4.1.1",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "express-async-handler": "^1.1.4"
   },
   "devDependencies": {
     "eslint": "^7.0.0",
