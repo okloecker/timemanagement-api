@@ -6,7 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/okloecker/timemanagement-api"
+  },
+  "author": "Olaf Klöcker",
+  "keywords": ["time management", "time tracker"],
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1"
