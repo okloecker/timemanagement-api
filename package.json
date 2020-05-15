@@ -11,9 +11,17 @@
     "url": "http://github.com/okloecker/timemanagement-api"
   },
   "author": "Olaf Klöcker",
-  "keywords": ["time management", "time tracker"],
+  "keywords": [
+    "time management",
+    "time tracker"
+  ],
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.0.0",
+    "eslint-config-mourner": "^3.0.0",
+    "eslint-config-prettier": "^6.11.0"
   }
 }
