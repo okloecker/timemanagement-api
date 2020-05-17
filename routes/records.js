@@ -7,7 +7,7 @@ const { Router } = require("@awaitjs/express");
 const router = Router();
 const newError = global.include("errors/createError");
 
-const recordSchema = global.include("validations/record");
+const { putSchema, postSchema } = global.include("validations/record");
 const authenticated = global.include("routes/authenticated");
 router.use(authenticated);
 
@@ -23,13 +23,13 @@ router.getAsync("/:id", async (req, res) => {
     params: { id }
   } = req;
   debug("get /%s", id);
-  res.json({data:{ id: 1, note: "one" }});
+  res.json({ data: { id: 1, note: "one" } });
 });
 
 router.postAsync("/", async (req, res) => {
   // TODO: create new db entry for record
   const guid = uuidv4();
-  const { error, value } = recordSchema.validate(req.body);
+  const { error, value } = postSchema.validate(req.body);
   if (error) {
     throw error;
   } else {
@@ -43,8 +43,13 @@ router.putAsync("/:id", async (req, res) => {
   const {
     params: { id }
   } = req;
-  debug("put /%s", id);
-  res.json({ id });
+  const { error, value } = putSchema.validate(req.body);
+  if (error) {
+    throw error;
+  } else {
+    debug("put %O", value);
+    res.json({ id });
+  }
 });
 
 module.exports = router;

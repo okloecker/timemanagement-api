@@ -2,7 +2,10 @@
 const joi = require("@hapi/joi");
 
 const schema = joi.object({
-  id: joi.string().guid(),
+  id: joi.string().alter({
+    put: schema => schema.guid().optional(),
+    post: schema => schema.forbidden()
+  }),
 
   startTime: joi
     .string()
@@ -20,4 +23,7 @@ const schema = joi.object({
   note: joi.string().trim()
 });
 
-module.exports = schema;
+const putSchema = schema.tailor("put");
+const postSchema = schema.tailor("post");
+
+module.exports = { putSchema, postSchema };
