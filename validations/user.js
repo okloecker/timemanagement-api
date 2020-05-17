@@ -1,15 +1,26 @@
+"use strict";
 const Joi = require("@hapi/joi");
+const newError = global.include("errors/createError");
 
 /**
  * User object validation for Login, Signup.
  */
 
-const schema = Joi.object({
+const lookupUser = async username => {
+  // TODO: await database query for username existence
+  if (!username || username !== "tom") {
+    throw newError(`Invalid username ${username}`, "INVALID_USERNAME");
+  }
+};
+
+const loginSchema = Joi.object({
   username: Joi.string()
     .trim()
     .alphanum()
     .min(3)
     .max(30)
+    .lowercase()
+    .external(lookupUser)
     .required(),
 
   password: Joi.string()
@@ -18,17 +29,22 @@ const schema = Joi.object({
     .max(78)
     .required(),
 
-  repeat_password: Joi.ref("password"),
-
-  auth_token: [Joi.string(), Joi.string().guid()],
-
   email: Joi.string()
     .trim()
     .email({
       minDomainSegments: 2
     })
-})
-  .xor("password", "auth_token")
-  .with("password", "repeat_password");
+});
 
-module.exports = schema;
+// same as loginSchema, but must have repeatPassword identical to password
+const signupSchema = Joi.object({
+  username: loginSchema.extract("username"),
+  password: loginSchema.extract("password"),
+  email: loginSchema.extract("email"),
+  repeatPassword: Joi.ref("password")
+}).with("password", "repeatPassword");
+
+module.exports = {
+  loginSchema,
+  signupSchema
+};
