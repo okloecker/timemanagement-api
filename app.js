@@ -88,7 +88,9 @@ app.use((err, req, res, next) => {
  */
 // eslint-disable-next-line -- must include "next" parameter, otherwise Express will not treat this function as error handling middleware
 app.use((err, req, res, next) => {
-  res.status(400).json({ error: { message: err.message, code: err.code } });
+  res
+    .status(err.status || 400)
+    .json({ error: { message: err.message, code: err.code } });
 });
 
 app.listen(config.server.port, () =>
