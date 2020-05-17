@@ -7,7 +7,7 @@ const envVarsSchema = joi
   .object({
     NODE_ENV: joi
       .string()
-      .allow("development", "production", "test", "provision")
+      .allow("development", "production", "test")
       .required(),
     PORT: joi
       .number()
