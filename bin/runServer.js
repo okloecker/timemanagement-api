@@ -5,4 +5,6 @@
 INSPECT="--inspect"
 INSPECT=
 
-DEBUG=tm:* nodemon ${INSPECT} . 
+export NODE_ENV=development
+export DEBUG=tm:* 
+nodemon ${INSPECT} . 
