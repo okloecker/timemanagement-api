@@ -21,7 +21,7 @@ router.all("*", async (req, res, next) => {
     );
     next();
   } catch (error) {
-    if (config.isDevelopment) debug("authTokenValidation error=%O", error);
+    if (config.isDevelopment) debug("authTokenValidation=%O", error);
     next(error);
   }
 });
