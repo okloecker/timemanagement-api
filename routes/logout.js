@@ -12,7 +12,7 @@ const router = Router();
 const authenticated = global.include("routes/authenticated");
 router.use(authenticated);
 
-const { logoutSchema } = global.include("validations/user");
+const { objectIdSchema } = global.include("validations/db");
 
 /**
  * Route for logout
@@ -21,12 +21,16 @@ const { logoutSchema } = global.include("validations/user");
  */
 router.postAsync("/", async (req, res) => {
   // validates and sanitizes input data
-  const { userId } = await logoutSchema.validateAsync(req.body, {
+  const {
+    body: { userId }
+  } = req;
+  const validUserId = await objectIdSchema.validateAsync(userId, {
     errors: { stack: config.isDevelopment }
   });
+  debug('validUserId', validUserId)
   const authToken = req.get("authToken");
 
-  const userIdObjectId = mongoist.ObjectId(userId);
+  const userIdObjectId = mongoist.ObjectId(validUserId);
   const user = await db.user.findOne({ _id: userIdObjectId });
 
   const deleteResult = await db.authToken.remove(
