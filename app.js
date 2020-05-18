@@ -22,8 +22,10 @@ global.include = function(file) {
 
 const validationErrorHandler = require("./errors/validationErrors");
 const config = require("./config/config");
+
 const auth = require("./routes/auth");
 const records = require("./routes/records");
+const logout = require("./routes/logout");
 
 // Sends JSON prettified to caller:
 if (config.isDevelopment) app.set("json spaces", 2);
@@ -37,6 +39,7 @@ app.use(express.json());
 // API routes:
 app.use("/auth", auth);
 app.use("/records", records);
+app.use("/logout", logout);
 
 /**
  * Log all requests for AAA

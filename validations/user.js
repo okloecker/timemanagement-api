@@ -37,6 +37,13 @@ const loginSchema = Joi.object({
     })
 });
 
+const logoutSchema = Joi.object({
+  userId: Joi.string()
+    .trim()
+    .length(24) // hexadecimal MongoDB ObjectId
+    .required()
+});
+
 const checkUserDoesntExist = async username => {
   const user = await db.user.findOne({ username });
   if (user) {
@@ -75,5 +82,6 @@ const signupSchema = Joi.object({
 
 module.exports = {
   loginSchema,
-  signupSchema
+  signupSchema,
+  logoutSchema
 };
