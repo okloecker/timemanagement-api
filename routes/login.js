@@ -1,11 +1,11 @@
 "use strict";
 const debug = require("debug")("tm:login");
-const addSeconds = require('date-fns/addSeconds')
+const addSeconds = require("date-fns/addSeconds");
 const config = global.include("config/config");
 const db = global.include("db/db");
 const bcrypt = require("bcrypt");
 const newError = global.include("errors/createError");
-const {createAuthToken} = global.include("util/authToken");
+const { createAuthToken } = global.include("util/authToken");
 const { Router } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
 const router = Router();
@@ -43,7 +43,7 @@ router.postAsync("/login", async (req, res) => {
   if (!passwordCorrect) throw mismatchError;
 
   const now = new Date();
-  const { token: authToken } = await db.authToken.insert({
+  const authToken = await db.authToken.insert({
     token: createAuthToken(),
     userId: id,
     created: now,
@@ -52,7 +52,18 @@ router.postAsync("/login", async (req, res) => {
   });
 
   // send back "good" data
-  res.json({ id, username: value.username, authToken, password: undefined });
+  const returnAuthToken = {
+    token: authToken.token,
+    created: authToken.created,
+    ttl: authToken.ttl,
+    expires: authToken.expires
+  };
+  res.json({
+    id,
+    username: value.username,
+    authToken: returnAuthToken,
+    password: undefined
+  });
 });
 
 module.exports = router;
