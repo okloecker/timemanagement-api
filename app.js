@@ -36,17 +36,18 @@ app.use(helmet());
 // Used to parse JSON bodies Node.js 4.16+
 app.use(express.json());
 
+/**
+ * Log all requests for AAA
+ */
+app.all("*", async (req, res, next) => {
+  debug("AAA %O %O", req.method, req.originalUrl);
+  next();
+});
+
 // API routes:
 app.use("/auth", auth);
 app.use("/records", records);
 app.use("/logout", logout);
-
-/**
- * Log all requests for AAA
- */
-app.postAsync("*", async req => {
-  debug("METHOD: %O, ROUTE: %O", req.method, req.originalUrl);
-});
 
 /**
  * Handle unknown GET routes
