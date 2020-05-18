@@ -1,5 +1,5 @@
 "use strict";
-const debug = require("debug")("tm:logout");
+// const debug = require("debug")("tm:logout");
 const config = global.include("config/config");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
@@ -29,8 +29,9 @@ router.postAsync("/", async (req, res) => {
   });
   const authToken = req.get("authToken");
 
+  // eslint-disable-next-line -- ObjectId starts with uppercase
   const userIdObjectId = mongoist.ObjectId(validUserId);
-  const user = await db.user.findOne({ _id: userIdObjectId });
+  await db.user.findOne({ _id: userIdObjectId });
 
   const deleteResult = await db.authToken.remove(
     { token: authToken, userId: userIdObjectId },

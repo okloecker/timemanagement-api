@@ -1,5 +1,5 @@
 "use strict";
-const debug = require("debug")("tm:authenticated");
+// const debug = require("debug")("tm:authenticated");
 const joi = require("@hapi/joi");
 const db = global.include("db/db");
 const newError = global.include("errors/createError");
@@ -9,6 +9,15 @@ const { AUTH_TOKEN_LEN } = global.include("util/authToken");
 /**
  * Authentication object validation.
  */
+
+const dbTokenSchema = joi.object({
+  _id: joi.object().required(),
+  ttl: joi.number().required(),
+  created: joi.date().required(),
+  expires: joi.date().required(),
+  userId: joi.object().required(),
+  token: joi.string().required()
+});
 
 /**
  * Find authToken in db.
@@ -31,17 +40,8 @@ const getAuthTokenAsyncFromDb = async authToken => {
       status: 403
     });
 
-  return await dbTokenSchema.validateAsync(dbtoken);
+  return dbTokenSchema.validateAsync(dbtoken);
 };
-
-const dbTokenSchema = joi.object({
-  _id: joi.object().required(),
-  ttl: joi.number().required(),
-  created: joi.date().required(),
-  expires: joi.date().required(),
-  userId: joi.object().required(),
-  token: joi.string().required()
-});
 
 const schema = joi
   .object({

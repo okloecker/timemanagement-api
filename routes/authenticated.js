@@ -21,6 +21,7 @@ router.all("*", async (req, res, next) => {
       }
     );
     // inject userId for token into req object as ObjectId
+    // eslint-disable-next-line -- require-atomic-updates doesn't apply here
     req.userId = validToken.authToken.userId;
     next();
   } catch (error) {
