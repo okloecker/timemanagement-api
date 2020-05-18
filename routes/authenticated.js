@@ -9,16 +9,19 @@ const authTokenValidation = global.include("validations/authenticated");
 
 /**
  * Check each request for presence HTTP header "authToken".
+ * userId for token is injected into Express "req" object.
  */
 router.all("*", async (req, res, next) => {
   try {
     // Check existence of authToken in headers and check it against database.
-    await authTokenValidation.validateAsync(
+    const validToken = await authTokenValidation.validateAsync(
       { authToken: req.get("authToken") },
       {
         errors: { stack: config.isDevelopment }
       }
     );
+    // inject userId for token into req object as ObjectId
+    req.userId = validToken.authToken.userId;
     next();
   } catch (error) {
     if (config.isDevelopment) debug("authTokenValidation=%O", error);
