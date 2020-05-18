@@ -27,7 +27,6 @@ router.postAsync("/", async (req, res) => {
   const validUserId = await objectIdSchema.validateAsync(userId, {
     errors: { stack: config.isDevelopment }
   });
-  debug('validUserId', validUserId)
   const authToken = req.get("authToken");
 
   const userIdObjectId = mongoist.ObjectId(validUserId);
