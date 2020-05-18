@@ -3,9 +3,7 @@ const debug = require("debug")("tm:authenticated");
 const joi = require("@hapi/joi");
 const db = global.include("db/db");
 const newError = global.include("errors/createError");
-const { AUTH_TOKEN_LEN_MIN, AUTH_TOKEN_LEN_MAX } = global.include(
-  "util/authToken"
-);
+const { AUTH_TOKEN_LEN } = global.include("util/authToken");
 
 /**
  * Authentication object validation.
@@ -40,8 +38,7 @@ const schema = joi
   .object({
     authToken: joi
       .string()
-      .min(AUTH_TOKEN_LEN_MIN)
-      .max(AUTH_TOKEN_LEN_MAX)
+      .length(AUTH_TOKEN_LEN)
       .external(getAuthTokenAsyncFromDb)
       .required()
   })
