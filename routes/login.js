@@ -1,22 +1,15 @@
 "use strict";
-const debug = require("debug")("tm:login");
+// const debug = require("debug")("tm:login");
 const addSeconds = require("date-fns/addSeconds");
 const config = global.include("config/config");
 const db = global.include("db/db");
 const bcrypt = require("bcrypt");
-const newError = global.include("errors/createError");
 const { createAuthToken } = global.include("util/authToken");
 const { Router } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
 const router = Router();
 
-const { loginSchema } = global.include("validations/user");
-
-const mismatchError = newError({
-  message: "This combination of user and password is not correct.",
-  code: "USER_OR_PASSWORD_INCORRECT",
-  status: 403
-});
+const { loginSchema, mismatchError } = global.include("validations/user");
 
 /**
  * Routes for login
@@ -30,9 +23,11 @@ router.postAsync("/login", async (req, res) => {
     errors: { stack: config.isDevelopment }
   });
 
-  const { password: passwordHash, _id: id } = await db.user.findOne({
-    username: value.username
-  });
+  const { password: passwordHash, _id: id } =
+    (await db.user.findOne({
+      username: value.username
+    })) || {};
+  if (!passwordHash) throw mismatchError;
   const passwordCorrect = await bcrypt.compare(value.password, passwordHash);
   if (!passwordCorrect) throw mismatchError;
 

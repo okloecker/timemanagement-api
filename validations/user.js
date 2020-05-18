@@ -3,15 +3,20 @@ const Joi = require("@hapi/joi");
 const db = global.include("db/db");
 const newError = global.include("errors/createError");
 
+const mismatchError = newError({
+  message: "This combination of user and password is not correct.",
+  code: "USER_OR_PASSWORD_INCORRECT",
+  status: 403
+});
+
 /**
  * User object validation for Login, Signup.
  */
 
 const lookupUser = async username => {
   const user = await db.user.findOne({ username });
-  if (!user) {
-    return null;
-  }
+  if (!user) throw mismatchError;
+  return undefined;
 };
 
 const loginSchema = Joi.object({
@@ -36,7 +41,6 @@ const loginSchema = Joi.object({
       minDomainSegments: 2
     })
 });
-
 
 const checkUserDoesntExist = async username => {
   const user = await db.user.findOne({ username });
@@ -77,4 +81,5 @@ const signupSchema = Joi.object({
 module.exports = {
   loginSchema,
   signupSchema,
+  mismatchError
 };
