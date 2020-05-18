@@ -24,12 +24,6 @@ const mismatchError = newError({
  * @param {string} password the password
  */
 router.postAsync("/login", async (req, res) => {
-  const {
-    body: { username, password }
-  } = req;
-
-  debug("called with username %o", username);
-
   // validates and sanitizes input data
   const value = await loginSchema.validateAsync(req.body, {
     abortEarly: false,
