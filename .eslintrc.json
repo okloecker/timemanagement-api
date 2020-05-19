@@ -8,7 +8,7 @@
     "no-undef": "error",
     "no-shadow": "error",
     "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "no-unused-vars": ["error", { "args": "after-used" }],
+    "no-unused-vars": ["warn", { "args": "none" }],
     "no-return-await": ["off"]
   }
 }

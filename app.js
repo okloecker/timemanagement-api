@@ -90,7 +90,6 @@ app.use((err, req, res, next) => {
 /**
  * Handle other errors.
  */
-// eslint-disable-next-line -- must include "next" parameter, otherwise Express will not treat this function as error handling middleware
 app.use((err, req, res, next) => {
   res
     .status(err.status || 400)
