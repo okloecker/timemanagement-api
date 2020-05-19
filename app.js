@@ -22,6 +22,7 @@ global.include = function(file) {
 
 const validationErrorHandler = require("./errors/validationErrors");
 const config = require("./config/config");
+const newError = global.include("errors/createError");
 
 const auth = require("./routes/auth");
 const records = require("./routes/records");
@@ -53,21 +54,21 @@ app.use("/api/logout", logout);
  * Handle unknown GET routes
  */
 app.getAsync("*", async req => {
-  throw new Error(`Unknown route ${req.url}`);
+  throw newError({message:`Unknown route ${req.url}`, status: 404});
 });
 
 /**
  * Handle unknown POST routes
  */
 app.postAsync("*", async req => {
-  throw new Error(`Unknown route ${req.url}`);
+  throw newError({message:`Unknown route ${req.url}`, status: 404});
 });
 
 /**
  * Handle unknown PUT routes
  */
 app.putAsync("*", async req => {
-  throw new Error(`Unknown route ${req.url}`);
+  throw newError({message:`Unknown route ${req.url}`, status: 404});
 });
 
 /*
