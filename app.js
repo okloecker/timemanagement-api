@@ -45,9 +45,9 @@ app.all("*", async (req, res, next) => {
 });
 
 // API routes:
-app.use("/auth", auth);
-app.use("/records", records);
-app.use("/logout", logout);
+app.use("/api/auth", auth);
+app.use("/api/records", records);
+app.use("/api/logout", logout);
 
 /**
  * Handle unknown GET routes
