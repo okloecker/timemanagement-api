@@ -40,7 +40,7 @@ const getAuthTokenAsyncFromDb = async authToken => {
       status: 403
     });
 
-  return dbTokenSchema.validateAsync(dbtoken);
+  return await dbTokenSchema.validateAsync(dbtoken);
 };
 
 const schema = joi
