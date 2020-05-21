@@ -1,9 +1,9 @@
 "use strict";
-const debug = require("debug")("tm:records");
+// const debug = require("debug")("tm:records");
 const config = global.include("config/config");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
-const { Router } = require("@awaitjs/express");
+const { Router, wrap } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
 const router = Router();
 const differenceInMinutes = require("date-fns/differenceInMinutes");
@@ -12,7 +12,26 @@ const newError = global.include("errors/createError");
 const { putSchema, postSchema } = global.include("validations/timerecord");
 const { objectIdSchema } = global.include("validations/db");
 const authenticated = global.include("routes/authenticated");
+const roleChecked = global.include("routes/roleChecked");
+const idChecked = global.include("middlewares/idChecked");
 router.use(authenticated);
+router.use(roleChecked);
+
+/**
+ * Inject the "id" param cast to MongoDB ObjectId as "idAsObjectId" into
+ * req.
+ */
+router.param(
+  "id",
+  wrap(async (req, res, next) => {
+    const {
+      params: { id }
+    } = req;
+    //eslint-disable-next-line -- ObjectId starts with uppercase letter
+    req.idAsObjectId = mongoist.ObjectId(id);
+    next();
+  })
+);
 
 /**
  * Returns all records for authenticated user.
@@ -70,14 +89,8 @@ const findOverlap = async (record, id) =>
 /**
  * Creates a record for authenticated user.
  */
-router.postAsync("/", async (req, res) => {
+router.postAsync("/", idChecked, async (req, res) => {
   const validRecord = await postSchema.validateAsync(req.body);
-  if (!validRecord.userId.equals(req.userId))
-    throw newError({
-      message: "Unauthorized",
-      code: "RECORD_UPDATE_FAILED_WRONG_USER",
-      status: 403
-    });
   const overlap = await findOverlap(validRecord);
 
   const durationMinutes = validRecord.endTime
@@ -91,8 +104,6 @@ router.postAsync("/", async (req, res) => {
     tmpId: undefined
   });
 
-  debug("createdRecord=%O", createdRecord);
-
   // eslint-disable-next-line -- removing _id but not using it
   const { _id, ...rest } = createdRecord;
   res.status(201).json({
@@ -104,32 +115,16 @@ router.postAsync("/", async (req, res) => {
 /**
  * Updates a record by id for authenticated user.
  */
-router.putAsync("/:id", async (req, res) => {
+router.putAsync("/:id", idChecked, async (req, res) => {
   const {
     params: { id }
   } = req;
 
-  // Check that the payload "id" is identical to ":id" from URL
-  if (req.body.id !== id)
-    throw newError({
-      message: "IDs don't match",
-      code: "RECORD_UPDATE_FAILED_ID_MISMATCH",
-      status: 403
-    });
-
   // Check that the payload "userId" is identical to authenticated userId (both
   // are ObjectIds)
   const validRecord = await putSchema.validateAsync(req.body);
-  if (!validRecord.userId.equals(req.userId))
-    throw newError({
-      message: "Unauthorized",
-      code: "RECORD_UPDATE_FAILED_WRONG_USER",
-      status: 403
-    });
 
-  //eslint-disable-next-line -- ObjectId starts with uppercase letter
-  const idAsObjectId = mongoist.ObjectId(id);
-  const overlap = await findOverlap(validRecord, idAsObjectId);
+  const overlap = await findOverlap(validRecord, req.idAsObjectId);
 
   const durationMinutes = validRecord.endTime
     ? differenceInMinutes(validRecord.endTime, validRecord.startTime)
@@ -142,9 +137,9 @@ router.putAsync("/:id", async (req, res) => {
   };
 
   const updatedRecord = await db.timerecords.replaceOne(
-    { _id: idAsObjectId, userId: validRecord.userId },
+    { _id: req.idAsObjectId, userId: validRecord.userId },
     {
-      _id: idAsObjectId,
+      _id: req.idAsObjectId,
       ...replaceRecord
     }
   );
@@ -173,12 +168,10 @@ router.deleteAsync("/:id", async (req, res) => {
   const {
     params: { id }
   } = req;
-  //eslint-disable-next-line -- ObjectId starts with uppercase letter
-  const idAsObjectId = mongoist.ObjectId(id);
 
   // only mark deleted if not yet deleted
   const record = await db.timerecords.findOne({
-    _id: idAsObjectId,
+    _id: req.idAsObjectId,
     userId: req.userId
   });
   if (!record)
@@ -190,12 +183,12 @@ router.deleteAsync("/:id", async (req, res) => {
 
   if (!(record || {}).deleted) {
     await db.timerecords.update(
-      { _id: idAsObjectId },
+      { _id: req.idAsObjectId },
       { $currentDate: { deleted: true } }
     );
   }
   const newRecord = await db.timerecords.findOne({
-    _id: idAsObjectId,
+    _id: req.idAsObjectId,
     userId: req.userId
   });
 
@@ -206,41 +199,18 @@ router.deleteAsync("/:id", async (req, res) => {
   });
 });
 
-router.putAsync("/:id/undelete", async (req, res) => {
+router.putAsync("/:id/undelete", idChecked, async (req, res) => {
   const {
     params: { id }
   } = req;
 
-  // Check that the payload "id" is identical to ":id" from URL
-  if (req.body.id !== id)
-    throw newError({
-      message: "IDs don't match",
-      code: "RECORD_UPDATE_FAILED_ID_MISMATCH",
-      status: 403
-    });
-
-  // Check that the payload "userId" is identical to authenticated userId (both
-  // are ObjectIds)
-  const validRecord = await putSchema.validateAsync(req.body);
-  if (!validRecord.userId.equals(req.userId)) {
-    debug("record  userId %s", validRecord.userId);
-    debug("request userId %s", req.userId);
-    throw newError({
-      message: "Unauthorized",
-      code: "RECORD_UPDATE_FAILED_WRONG_USER",
-      status: 403
-    });
-  }
-
-  //eslint-disable-next-line -- ObjectId starts with uppercase letter
-  const idAsObjectId = mongoist.ObjectId(id);
-
-  await db.timerecords.update({ _id: idAsObjectId }, 
-      { $set: { deleted: undefined } }
+  await db.timerecords.update(
+    { _id: req.idAsObjectId },
+    { $set: { deleted: undefined } }
   );
 
   const newRecord = await db.timerecords.findOne({
-    _id: idAsObjectId,
+    _id: req.idAsObjectId,
     userId: req.userId
   });
 

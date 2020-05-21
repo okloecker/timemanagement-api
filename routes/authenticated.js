@@ -8,6 +8,7 @@ const router = Router();
 const authTokenValidation = global.include("validations/authenticated");
 
 /**
+ * Middleware:
  * Check each request for presence HTTP header "authToken".
  * userId for token is injected into Express "req" object.
  */
