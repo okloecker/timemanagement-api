@@ -25,7 +25,7 @@ const config = require("./config/config");
 const newError = global.include("errors/createError");
 
 const auth = require("./routes/auth");
-const records = require("./routes/records");
+const timerecords = require("./routes/timerecords");
 const logout = require("./routes/logout");
 
 // Sends JSON prettified to caller:
@@ -47,7 +47,7 @@ app.all("*", async (req, res, next) => {
 
 // API routes:
 app.use("/api/auth", auth);
-app.use("/api/records", records);
+app.use("/api/timerecords", timerecords);
 app.use("/api/logout", logout);
 
 /**

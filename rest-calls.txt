@@ -1,0 +1,61 @@
+All endpoints return JSON documents in the same general format.
+
+For good results (HTTP codes 2xx), they will have a key "data" and the return
+value object, e.g. an updated object from a POST, PUT or DELETE operation or a
+single object or array from GET operations.
+Additionally, there can be a "warning" key, containing more information, e.g. a
+POST passed, but there were time overlaps.
+An optional "message" key has a human readable value like "Login successful."
+
+In the case of errors, instead of a "data" key there will be an "error" key.
+Validation errors will have a "validation" object below the "error", containing
+an array of key/value mappings, where each entry will be a failed validation,
+e.g. the result of a form value error.
+
+All GET, POST, PUT and DELETE calls return an object with:
+{ data: {
+    ...
+  },
+  message: ""
+}
+
+or
+
+{ data: [
+    ...
+  ],
+  message: ""
+}
+
+or
+
+{ data: [
+    ...
+  ],
+  warning: {
+    overlap: [...]
+  }
+}
+
+or 
+{ error: {
+    validation: [
+      ...
+    ]
+  }
+}
+
+or 
+{ error: {
+    ...
+  }
+}
+
+
+or 
+{ error: {
+    message: ""
+  }
+}
+
+

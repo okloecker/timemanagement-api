@@ -13,6 +13,7 @@ const authenticated = global.include("routes/authenticated");
 router.use(authenticated);
 
 const { objectIdSchema } = global.include("validations/db");
+const { logoutSchema } = global.include("validations/user");
 
 /**
  * Route for logout
@@ -21,18 +22,13 @@ const { objectIdSchema } = global.include("validations/db");
  */
 router.postAsync("/", async (req, res) => {
   // validates and sanitizes input data
-  const {
-    body: { userId }
-  } = req;
-  const validUserId = await objectIdSchema.validateAsync(userId, {
-    errors: { stack: config.isDevelopment }
-  });
-  const authToken = req.get("authToken");
+  const logoutUser = await logoutSchema.validateAsync(req.body);
 
   // eslint-disable-next-line -- ObjectId starts with uppercase
-  const userIdObjectId = mongoist.ObjectId(validUserId);
+  const userIdObjectId = mongoist.ObjectId(logoutUser.userId);
   await db.user.findOne({ _id: userIdObjectId });
 
+  const authToken = req.get("authToken");
   const deleteResult = await db.authToken.remove(
     { token: authToken, userId: userIdObjectId },
     { justOne: true }

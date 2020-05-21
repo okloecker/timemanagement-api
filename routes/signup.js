@@ -34,7 +34,10 @@ router.postAsync("/signup", async (req, res) => {
   });
   debug("inserted user %o", user);
 
-  res.json({ ...value, password: undefined });
+  res.json({
+    data: { ...value, password: undefined, repeatPassword: undefined },
+    message: "Signed up successfully."
+  });
 });
 
 module.exports = router;

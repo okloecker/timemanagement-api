@@ -15,6 +15,10 @@ const schema = joi.object({
     post: postschema => postschema.forbidden()
   }),
 
+  tmpId: joi.string().alter({
+    put: putschema => putschema.empty(null).strip(),
+  }),
+
   userId: joi
     .string()
     .trim()
@@ -32,11 +36,20 @@ const schema = joi.object({
   endTime: joi
     .date()
     .iso()
+    .empty(null)
     .greater(joi.ref("startTime")),
 
-  durationMinutes: joi.number(),
+  durationMinutes: joi.number().empty(null),
 
-  note: joi.string().trim()
+  note: joi
+    .string()
+    .trim()
+    .empty(""),
+
+  deleted: joi
+    .date()
+    .iso()
+    .empty(null)
 });
 
 const putSchema = schema.tailor("put");

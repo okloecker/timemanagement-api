@@ -78,8 +78,16 @@ const signupSchema = Joi.object({
   repeatPassword: Joi.ref("password")
 }).with("password", "repeatPassword");
 
+const logoutSchema = Joi.object({
+  userId: Joi.string()
+    .trim()
+    .length(24) // hexadecimal MongoDB ObjectId
+    .required()
+});
+
 module.exports = {
   loginSchema,
   signupSchema,
+  logoutSchema,
   mismatchError
 };

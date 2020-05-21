@@ -48,10 +48,13 @@ router.postAsync("/login", async (req, res) => {
     expires: authToken.expires
   };
   res.json({
-    id,
-    username: value.username,
-    authToken: returnAuthToken,
-    password: undefined
+    data: {
+      id,
+      username: value.username,
+      authToken: returnAuthToken,
+      password: undefined
+    },
+    message: "Logged in successfully."
   });
 });
 

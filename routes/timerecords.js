@@ -1,5 +1,5 @@
 "use strict";
-// const debug = require("debug")("tm:records");
+const debug = require("debug")("tm:records");
 const config = global.include("config/config");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
@@ -9,7 +9,7 @@ const router = Router();
 const differenceInMinutes = require("date-fns/differenceInMinutes");
 const newError = global.include("errors/createError");
 
-const { putSchema, postSchema } = global.include("validations/record");
+const { putSchema, postSchema } = global.include("validations/timerecord");
 const { objectIdSchema } = global.include("validations/db");
 const authenticated = global.include("routes/authenticated");
 router.use(authenticated);
@@ -18,10 +18,16 @@ router.use(authenticated);
  * Returns all records for authenticated user.
  */
 router.getAsync("/", async (req, res) => {
-  const records = await db.records.find({
-    userId: req.userId
+  //TODO: handle from/to query params
+  const records = await db.timerecords.find({
+    userId: req.userId,
+    deleted: null
   });
-  res.json({ data: records });
+  const returnRecords = records.map(r => {
+    const { _id: id, ...rest } = r;
+    return { id, ...rest };
+  });
+  res.json({ data: returnRecords });
 });
 
 /**
@@ -34,7 +40,7 @@ router.getAsync("/:id", async (req, res) => {
   const validRecordId = await objectIdSchema.validateAsync(id, {
     errors: { stack: config.isDevelopment }
   });
-  const record = await db.records.findOne({
+  const record = await db.timerecords.findOne({
     //eslint-disable-next-line -- ObjectId starts with uppercase letter
     _id: mongoist.ObjectId(validRecordId)
   });
@@ -45,7 +51,8 @@ router.getAsync("/:id", async (req, res) => {
       status: 404
     });
   }
-  res.json({ data: record });
+  const { _id, ...rest } = record;
+  res.json({ data: { id: _id, ...rest } });
 });
 
 /**
@@ -53,7 +60,7 @@ router.getAsync("/:id", async (req, res) => {
  * record and (if provided) don't have the given "id".
  */
 const findOverlap = async (record, id) =>
-  db.records.find({
+  db.timerecords.find({
     userId: record.userId,
     startTime: { $lt: record.endTime },
     endTime: { $gt: record.startTime },
@@ -65,6 +72,12 @@ const findOverlap = async (record, id) =>
  */
 router.postAsync("/", async (req, res) => {
   const validRecord = await postSchema.validateAsync(req.body);
+  if (!validRecord.userId.equals(req.userId))
+    throw newError({
+      message: "Unauthorized",
+      code: "RECORD_UPDATE_FAILED_WRONG_USER",
+      status: 403
+    });
   const overlap = await findOverlap(validRecord);
 
   const durationMinutes = validRecord.endTime
@@ -72,14 +85,18 @@ router.postAsync("/", async (req, res) => {
     : undefined;
 
   // userId will be ObjectID:
-  const createdRecord = await db.records.save({
+  const createdRecord = await db.timerecords.save({
     ...validRecord,
-    userId: validRecord.userId,
-    durationMinutes
+    durationMinutes,
+    tmpId: undefined
   });
 
+  debug("createdRecord=%O", createdRecord);
+
+  // eslint-disable-next-line -- removing _id but not using it
+  const { _id, ...rest } = createdRecord;
   res.status(201).json({
-    data: createdRecord,
+    data: { id: _id, ...rest, tmpId: validRecord.tmpId },
     warning: overlap && overlap.length ? { overlap } : undefined
   });
 });
@@ -124,7 +141,7 @@ router.putAsync("/:id", async (req, res) => {
     durationMinutes
   };
 
-  const updatedRecord = await db.records.replaceOne(
+  const updatedRecord = await db.timerecords.replaceOne(
     { _id: idAsObjectId, userId: validRecord.userId },
     {
       _id: idAsObjectId,
@@ -132,8 +149,15 @@ router.putAsync("/:id", async (req, res) => {
     }
   );
 
-  if (!updatedRecord.result.ok || updatedRecord.result.n !== 1)
+  if (updatedRecord.result.n !== 1) {
+    throw newError({
+      message: "Record to update not found.",
+      code: "RECORD_UPDATE_FAILED_NOT_FOUND"
+    });
+  }
+  if (!updatedRecord.result.ok) {
     throw newError({ message: "Update failed.", code: "RECORD_UPDATE_FAILED" });
+  }
 
   res.json({
     data: { id, ...replaceRecord },
@@ -153,7 +177,7 @@ router.deleteAsync("/:id", async (req, res) => {
   const idAsObjectId = mongoist.ObjectId(id);
 
   // only mark deleted if not yet deleted
-  const record = await db.records.findOne({
+  const record = await db.timerecords.findOne({
     _id: idAsObjectId,
     userId: req.userId
   });
@@ -165,12 +189,57 @@ router.deleteAsync("/:id", async (req, res) => {
     });
 
   if (!(record || {}).deleted) {
-    await db.records.update(
+    await db.timerecords.update(
       { _id: idAsObjectId },
       { $currentDate: { deleted: true } }
     );
   }
-  const newRecord = await db.records.findOne({
+  const newRecord = await db.timerecords.findOne({
+    _id: idAsObjectId,
+    userId: req.userId
+  });
+
+  // eslint-disable-next-line -- removing _id but not using it
+  const { _id, ...rest } = newRecord;
+  res.json({
+    data: { id, ...rest }
+  });
+});
+
+router.putAsync("/:id/undelete", async (req, res) => {
+  const {
+    params: { id }
+  } = req;
+
+  // Check that the payload "id" is identical to ":id" from URL
+  if (req.body.id !== id)
+    throw newError({
+      message: "IDs don't match",
+      code: "RECORD_UPDATE_FAILED_ID_MISMATCH",
+      status: 403
+    });
+
+  // Check that the payload "userId" is identical to authenticated userId (both
+  // are ObjectIds)
+  const validRecord = await putSchema.validateAsync(req.body);
+  if (!validRecord.userId.equals(req.userId)) {
+    debug("record  userId %s", validRecord.userId);
+    debug("request userId %s", req.userId);
+    throw newError({
+      message: "Unauthorized",
+      code: "RECORD_UPDATE_FAILED_WRONG_USER",
+      status: 403
+    });
+  }
+
+  //eslint-disable-next-line -- ObjectId starts with uppercase letter
+  const idAsObjectId = mongoist.ObjectId(id);
+
+  await db.timerecords.update({ _id: idAsObjectId }, 
+      { $set: { deleted: undefined } }
+  );
+
+  const newRecord = await db.timerecords.findOne({
     _id: idAsObjectId,
     userId: req.userId
   });

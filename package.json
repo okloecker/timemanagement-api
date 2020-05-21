@@ -25,6 +25,7 @@
     "express": "^4.17.1",
     "helmet": "^3.22.0",
     "mongoist": "^2.5.2",
+    "object-path-immutable": "^4.1.0",
     "uuid": "^8.0.0"
   },
   "devDependencies": {
