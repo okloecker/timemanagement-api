@@ -1,5 +1,7 @@
 "use strict";
 const mongoist = require("mongoist");
+const { objectIdSchema } = global.include("validations/db");
+const config = global.include("config/config");
 const newError = global.include("errors/createError");
 
 /** Middleware to verify the ":id" URL param against the "id" field in payload
@@ -13,6 +15,10 @@ const idChecked = async (req, res, next) => {
     const {
       params: { id }
     } = req;
+
+    await objectIdSchema.validateAsync(id, {
+      errors: { stack: config.isDevelopment }
+    });
 
     if (req.body.id !== id)
       throw newError({

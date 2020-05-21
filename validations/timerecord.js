@@ -11,12 +11,18 @@ const mongoist = require("mongoist");
  */
 const schema = joi.object({
   id: joi.string().alter({
-    put: putschema => putschema.required().strip(), // MongoDB expects "_id" instead of "id"
+    put: putschema =>
+      putschema
+        .trim()
+        .hex()
+        .length(24)
+        .required()
+        .strip(), // MongoDB expects "_id" instead of "id"
     post: postschema => postschema.forbidden()
   }),
 
   tmpId: joi.string().alter({
-    put: putschema => putschema.empty(null).strip(),
+    put: putschema => putschema.empty(null).strip()
   }),
 
   userId: joi

@@ -1,6 +1,5 @@
 "use strict";
 // const debug = require("debug")("tm:logout");
-const config = global.include("config/config");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
 const newError = global.include("errors/createError");
@@ -12,7 +11,6 @@ const router = Router();
 const authenticated = global.include("routes/authenticated");
 router.use(authenticated);
 
-const { objectIdSchema } = global.include("validations/db");
 const { logoutSchema } = global.include("validations/user");
 
 /**

@@ -1,6 +1,5 @@
 "use strict";
 // const debug = require("debug")("tm:records");
-const config = global.include("config/config");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
 const { Router, wrap } = require("@awaitjs/express");
@@ -9,8 +8,9 @@ const router = Router();
 const differenceInMinutes = require("date-fns/differenceInMinutes");
 const newError = global.include("errors/createError");
 
-const { putSchema, postSchema } = global.include("validations/timerecord");
 const { objectIdSchema } = global.include("validations/db");
+const config = global.include("config/config");
+const { putSchema, postSchema } = global.include("validations/timerecord");
 const authenticated = global.include("routes/authenticated");
 const roleChecked = global.include("routes/roleChecked");
 const idChecked = global.include("middlewares/idChecked");
@@ -27,6 +27,9 @@ router.param(
     const {
       params: { id }
     } = req;
+    await objectIdSchema.validateAsync(id, {
+      errors: { stack: config.isDevelopment }
+    });
     //eslint-disable-next-line -- ObjectId starts with uppercase letter
     req.idAsObjectId = mongoist.ObjectId(id);
     next();
@@ -53,15 +56,9 @@ router.getAsync("/", async (req, res) => {
  * Returns single record by id for authenticated user.
  */
 router.getAsync("/:id", async (req, res) => {
-  const {
-    params: { id }
-  } = req;
-  const validRecordId = await objectIdSchema.validateAsync(id, {
-    errors: { stack: config.isDevelopment }
-  });
   const record = await db.timerecords.findOne({
     //eslint-disable-next-line -- ObjectId starts with uppercase letter
-    _id: mongoist.ObjectId(validRecordId)
+    _id: req.idAsObjectId
   });
   if (!record) {
     throw newError({
@@ -213,6 +210,13 @@ router.putAsync("/:id/undelete", idChecked, async (req, res) => {
     _id: req.idAsObjectId,
     userId: req.userId
   });
+
+  if (!newRecord)
+    throw newError({
+      message: "Record unknown",
+      code: "RECORD_UNKNOWN",
+      status: 404
+    });
 
   // eslint-disable-next-line -- removing _id but not using it
   const { _id, ...rest } = newRecord;

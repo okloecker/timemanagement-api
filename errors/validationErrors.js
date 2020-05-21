@@ -2,7 +2,6 @@
 const debug = require("debug")("tm:validationErrors");
 const config = global.include("config/config");
 const Joi = require("@hapi/joi");
-const imm = require("object-path-immutable");
 
 /**
  * Sanitize and standardize validation errors.
