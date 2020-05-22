@@ -13,6 +13,7 @@ const newError = global.include("errors/createError");
 const { objectIdSchema } = global.include("validations/db");
 const config = global.include("config/config");
 const { putSchema, postSchema } = global.include("validations/timerecord");
+const { renameKey } = global.include("util/object");
 const authenticated = global.include("routes/authenticated");
 const roleChecked = global.include("routes/roleChecked");
 const idChecked = global.include("middlewares/idChecked");
@@ -58,13 +59,10 @@ router.getAsync("/", async (req, res) => {
   if (contains) dbquery.note = { $regex: `${contains}`, $options: "i" };
 
   const records = await db.timerecords.find(dbquery);
-  // TODO: refactor out function to change _id to id
-  const returnRecords = records.map(r => {
-    const { _id: id, ...rest } = r;
-    return { id, ...rest };
-  });
+  const returnRecords = records.map(r => renameKey(r, "_id", "id"));
   res.json({ data: returnRecords });
 });
+
 
 /**
  * Returns single record by id for authenticated user.
@@ -81,8 +79,7 @@ router.getAsync("/:id", async (req, res) => {
       status: 404
     });
   }
-  const { _id, ...rest } = record;
-  res.json({ data: { id: _id, ...rest } });
+  res.json({ data: renameKey(record, "_id", "id") });
 });
 
 /**
@@ -116,9 +113,8 @@ router.postAsync("/", idChecked, async (req, res) => {
   });
 
   // eslint-disable-next-line -- removing _id but not using it
-  const { _id, ...rest } = createdRecord;
   res.status(201).json({
-    data: { id: _id, ...rest, tmpId: validRecord.tmpId },
+    data: { ...renameKey(createdRecord, "_id", "id"), tmpId: validRecord.tmpId },
     warning: overlap && overlap.length ? { overlap } : undefined
   });
 });
@@ -203,10 +199,8 @@ router.deleteAsync("/:id", async (req, res) => {
     userId: req.userId
   });
 
-  // eslint-disable-next-line -- removing _id but not using it
-  const { _id, ...rest } = newRecord;
   res.json({
-    data: { id, ...rest }
+    data: renameKey(newRecord, "_id", "id")
   });
 });
 
@@ -232,10 +226,8 @@ router.putAsync("/:id/undelete", idChecked, async (req, res) => {
       status: 404
     });
 
-  // eslint-disable-next-line -- removing _id but not using it
-  const { _id, ...rest } = newRecord;
   res.json({
-    data: { id, ...rest }
+    data: renameKey(newRecord, "_id", "id")
   });
 });
 
