@@ -1,7 +1,9 @@
 "use strict";
-// const debug = require("debug")("tm:records");
+const debug = require("debug")("tm:records");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
+const parse = require("date-fns/parse");
+const isValid = require("date-fns/isValid");
 const { Router, wrap } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
 const router = Router();
@@ -40,11 +42,23 @@ router.param(
  * Returns all records for authenticated user.
  */
 router.getAsync("/", async (req, res) => {
-  //TODO: handle from/to query params
-  const records = await db.timerecords.find({
+  const {
+    query: { dateFrom, dateTo, contains }
+  } = req;
+
+  const from = parse(dateFrom, "yyyy-MM-dd", new Date());
+  const to = parse(dateTo, "yyyy-MM-dd", new Date());
+
+  const dbquery = {
     userId: req.userId,
     deleted: null
-  });
+  };
+  if (isValid(from)) dbquery.startTime = { $gte: from };
+  if (isValid(to)) dbquery.endTime = { $lte: to };
+  if (contains) dbquery.note = { $regex: `${contains}`, $options: "i" };
+
+  const records = await db.timerecords.find(dbquery);
+  // TODO: refactor out function to change _id to id
   const returnRecords = records.map(r => {
     const { _id: id, ...rest } = r;
     return { id, ...rest };
