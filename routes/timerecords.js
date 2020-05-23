@@ -2,7 +2,7 @@
 const debug = require("debug")("tm:records");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
-const parse = require("date-fns/parse");
+const parseISO = require("date-fns/parseISO");
 const isValid = require("date-fns/isValid");
 const { Router, wrap } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
@@ -47,22 +47,26 @@ router.getAsync("/", async (req, res) => {
     query: { dateFrom, dateTo, contains }
   } = req;
 
-  const from = parse(dateFrom, "yyyy-MM-dd", new Date());
-  const to = parse(dateTo, "yyyy-MM-dd", new Date());
+  const from = parseISO(dateFrom);
+  const to = parseISO(dateTo);
 
+  // construct query: only undeleted records, and if "dateFrom" is given, startTime
+  // must be on or after that; if "dateTo" is given, the whole record must be
+  // inside the filter window, unless "endTime" is unset, in which case it
+  // should be returned
   const dbquery = {
     userId: req.userId,
     deleted: null
   };
   if (isValid(from)) dbquery.startTime = { $gte: from };
-  if (isValid(to)) dbquery.endTime = { $lte: to };
+  if (isValid(to))
+    dbquery.$or = [{ endTime: { $exists: false } }, { endTime: { $lte: to } }];
   if (contains) dbquery.note = { $regex: `${contains}`, $options: "i" };
 
   const records = await db.timerecords.find(dbquery);
   const returnRecords = records.map(r => renameKey(r, "_id", "id"));
   res.json({ data: returnRecords });
 });
-
 
 /**
  * Returns single record by id for authenticated user.
@@ -114,7 +118,10 @@ router.postAsync("/", idChecked, async (req, res) => {
 
   // eslint-disable-next-line -- removing _id but not using it
   res.status(201).json({
-    data: { ...renameKey(createdRecord, "_id", "id"), tmpId: validRecord.tmpId },
+    data: {
+      ...renameKey(createdRecord, "_id", "id"),
+      tmpId: validRecord.tmpId
+    },
     warning: overlap && overlap.length ? { overlap } : undefined
   });
 });
