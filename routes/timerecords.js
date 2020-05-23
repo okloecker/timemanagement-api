@@ -104,6 +104,11 @@ const findOverlap = async (record, id) =>
 
 /**
  * Creates a record for authenticated user.
+ * Caller can send an "id" field as a temporary identifier (e.g. for optimistic
+ * create), however the source of truth will be a database generated _id.
+ * So that the caller can reconcile the IDs, it will get back an object where
+ * the "id" field will have a composite value consisting of:
+ * "<originalId>_<_id>", e.g. both IDs separated by an underscore.
  */
 router.postAsync("/", idChecked, async (req, res) => {
   const validRecord = await postSchema.validateAsync(req.body);
@@ -113,19 +118,22 @@ router.postAsync("/", idChecked, async (req, res) => {
     ? differenceInMinutes(validRecord.endTime, validRecord.startTime)
     : undefined;
 
-  // userId will be ObjectID:
   const createdRecord = await db.timerecords.save({
     ...validRecord,
-    durationMinutes,
-    tmpId: undefined
+    durationMinutes
   });
 
-  // eslint-disable-next-line -- removing _id but not using it
+  const returnedRecord = {
+    ...renameKey(createdRecord, "_id", "id")
+  };
+
+  // only if caller sent an "id", change the db generated field into a
+  // composite value
+  if (validRecord.id)
+    returnedRecord.id = `${returnedRecord.id}_${validRecord.id}`;
+
   res.status(201).json({
-    data: {
-      ...renameKey(createdRecord, "_id", "id"),
-      tmpId: validRecord.tmpId
-    },
+    data: returnedRecord,
     warning: overlap && overlap.length ? { overlap } : undefined
   });
 });

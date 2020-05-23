@@ -45,12 +45,8 @@ const schema = joi
           .length(24)
           .required()
           .strip(), // MongoDB expects "_id" instead of "id"
-      post: postschema => postschema.forbidden()
+      post: postschema => postschema.guid()
     }),
-
-    tmpId: joi
-      .string()
-      .alter({ put: putschema => putschema.empty(null).strip() }),
 
     userId: joi
       .string()
