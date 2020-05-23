@@ -60,7 +60,11 @@ router.getAsync("/", async (req, res) => {
   };
   if (isValid(from)) dbquery.startTime = { $gte: from };
   if (isValid(to))
-    dbquery.$or = [{ endTime: { $exists: false } }, { endTime: { $lte: to } }];
+    dbquery.$or = [
+      { endTime: { $lte: to } },
+      { endTime: { $exists: false } },
+      { endTime: null }
+    ];
   if (contains) dbquery.note = { $regex: `${contains}`, $options: "i" };
 
   const records = await db.timerecords.find(dbquery);
