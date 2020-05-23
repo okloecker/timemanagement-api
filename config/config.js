@@ -13,7 +13,7 @@ const envVarsSchema = joi
     PORT: joi
       .number()
       .empty("")
-      .default(3000),
+      .default(3001),
     MONGODB_URL: joi.string().required()
   })
   .unknown()
@@ -34,14 +34,14 @@ const config = {
   isDevelopment: envVars.NODE_ENV === "development",
   isProduction: envVars.NODE_ENV === "production",
   server: {
-    port: Number(envVars.PORT || 3000)
+    port: envVars.PORT
   },
   mongoDb: {
     url: envVars.MONGODB_URL,
     options: {}
   },
   authToken: {
-    ttl: 60 * 60 * 24 * 14, // 14 days
+    ttl: 60 * 60 * 24 * 14 // 14 days
   }
 };
 debug("Config:", config);
