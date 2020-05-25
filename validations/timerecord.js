@@ -17,9 +17,9 @@ const addSeconds = require("date-fns/addSeconds");
 const roundMinutesDown = values => {
   return {
     ...values,
-    startTime: roundToNearestMinutes(addSeconds(values.startTime, 30)),
+    startTime: roundToNearestMinutes(addSeconds(values.startTime, -30)),
     endTime: values.endTime
-      ? roundToNearestMinutes(addSeconds(values.endTime, 30))
+      ? roundToNearestMinutes(addSeconds(values.endTime, -30))
       : values.endTime
   };
 };
