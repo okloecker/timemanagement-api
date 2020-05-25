@@ -4,10 +4,13 @@ const db = global.include("db/db");
 const mongoist = require("mongoist");
 const parseISO = require("date-fns/parseISO");
 const isValid = require("date-fns/isValid");
+const startOfDay = require("date-fns/startOfDay");
+const endOfDay = require("date-fns/endOfDay");
 const { Router, wrap } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
 const router = Router();
 const differenceInMinutes = require("date-fns/differenceInMinutes");
+const addHours = require("date-fns/addHours");
 const newError = global.include("errors/createError");
 
 const { objectIdSchema } = global.include("validations/db");
@@ -47,8 +50,8 @@ router.getAsync("/", async (req, res) => {
     query: { dateFrom, dateTo, contains }
   } = req;
 
-  const from = parseISO(dateFrom);
-  const to = parseISO(dateTo);
+  const from = startOfDay(parseISO(dateFrom));
+  const to = endOfDay(addHours(parseISO(dateTo), 24));
 
   // construct query: only undeleted records, and if "dateFrom" is given, startTime
   // must be on or after that; if "dateTo" is given, the whole record must be
@@ -58,7 +61,10 @@ router.getAsync("/", async (req, res) => {
     userId: req.userId,
     deleted: null
   };
-  if (isValid(from)) dbquery.startTime = { $gte: from };
+  if (isValid(from)) {
+    dbquery.startTime = { $gte: from };
+    dbquery.startTime = { $lte: to };
+  }
   if (isValid(to))
     dbquery.$or = [
       { endTime: { $lte: to } },
