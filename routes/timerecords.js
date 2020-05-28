@@ -62,8 +62,7 @@ router.getAsync("/", async (req, res) => {
     deleted: null
   };
   if (isValid(from)) {
-    dbquery.startTime = { $gte: from };
-    dbquery.startTime = { $lte: to };
+    dbquery.startTime = { $gte: from, $lte: to };
   }
   if (isValid(to))
     dbquery.$or = [
