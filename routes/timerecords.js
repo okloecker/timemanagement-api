@@ -50,7 +50,7 @@ router.getAsync("/", async (req, res) => {
     query: { dateFrom, dateTo, contains }
   } = req;
 
-  const from = startOfDay(parseISO(dateFrom));
+  const from = startOfDay(addHours(parseISO(dateFrom), 24));
   const to = endOfDay(addHours(parseISO(dateTo), 24));
 
   // construct query: only undeleted records, and if "dateFrom" is given, startTime
