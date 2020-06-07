@@ -198,10 +198,6 @@ router.putAsync("/:id", idChecked, async (req, res) => {
  * operation).
  */
 router.deleteAsync("/:id", async (req, res) => {
-  const {
-    params: { id }
-  } = req;
-
   // only mark deleted if not yet deleted
   const record = await db.timerecords.findOne({
     _id: req.idAsObjectId,
@@ -231,10 +227,6 @@ router.deleteAsync("/:id", async (req, res) => {
 });
 
 router.putAsync("/:id/undelete", idChecked, async (req, res) => {
-  const {
-    params: { id }
-  } = req;
-
   await db.timerecords.update(
     { _id: req.idAsObjectId },
     { $set: { deleted: undefined } }
