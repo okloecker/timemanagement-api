@@ -1,16 +1,14 @@
 "use strict";
-const debug = require("debug")("tm:records");
+// const debug = require("debug")("tm:records");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
 const parseISO = require("date-fns/parseISO");
 const isValid = require("date-fns/isValid");
-const startOfDay = require("date-fns/startOfDay");
-const endOfDay = require("date-fns/endOfDay");
 const { Router, wrap } = require("@awaitjs/express");
 // eslint-disable-next-line -- Router starts with uppercase
 const router = Router();
 const differenceInMinutes = require("date-fns/differenceInMinutes");
-const addHours = require("date-fns/addHours");
+const roundToNearestMinutes = require("date-fns/roundToNearestMinutes");
 const newError = global.include("errors/createError");
 
 const { objectIdSchema } = global.include("validations/db");
@@ -50,8 +48,12 @@ router.getAsync("/", async (req, res) => {
     query: { dateFrom, dateTo, contains }
   } = req;
 
-  const from = startOfDay(addHours(parseISO(dateFrom), 24));
-  const to = endOfDay(addHours(parseISO(dateTo), 24));
+  const from = parseISO(dateFrom);
+
+  // dateTo should be midnight, so if it comes in as '2020-06-01T23:59:59+01:00', apply rounding
+  // Can't do this in frontend, because that would be the beginning of the next
+  // day, not the end of given day.
+  const to = roundToNearestMinutes(parseISO(dateTo));
 
   // construct query: only undeleted records, and if "dateFrom" is given, startTime
   // must be on or after that; if "dateTo" is given, the whole record must be

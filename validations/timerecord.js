@@ -1,5 +1,4 @@
 "use strict";
-const debug = require("debug")("tm:validationTimeRecord");
 const joi = require("@hapi/joi");
 const mongoist = require("mongoist");
 const differenceInMinutes = require("date-fns/differenceInMinutes");
