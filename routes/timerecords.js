@@ -1,5 +1,5 @@
 "use strict";
-// const debug = require("debug")("tm:records");
+const debug = require("debug")("tm:records");
 const db = global.include("db/db");
 const mongoist = require("mongoist");
 const parseISO = require("date-fns/parseISO");
@@ -72,7 +72,8 @@ router.getAsync("/", async (req, res) => {
       { endTime: { $exists: false } },
       { endTime: null }
     ];
-  if (contains) dbquery.note = { $regex: `${contains}`, $options: "i" };
+  if (contains)
+    dbquery.note = { $regex: `${contains.replace("[", "\\[")}`, $options: "i" };
 
   const records = await db.timerecords.find(dbquery);
   const returnRecords = records.map(r => renameKey(r, "_id", "id"));
