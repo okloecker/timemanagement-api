@@ -1,6 +1,6 @@
 {
   "name": "timemanagement-api",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node.js/Express.js backend for timemanagement-react",
   "main": "app.js",
   "scripts": {
@@ -33,7 +33,7 @@
     "eslint-config-mourner": "^3.0.0",
     "eslint-config-prettier": "^6.11.0",
     "jest": "^26.0.1"
-  }, 
+  },
   "jest": {
     "testEnvironment": "node",
     "coveragePathIgnorePatterns": [
